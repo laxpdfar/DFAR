@@ -47,9 +47,7 @@
   .rc{width:26px;text-align:center;font-weight:bold;font-size:11px;background:var(--soft)}
   tr.c td{border-bottom:2px solid #999}
   tr.c .disp input{font-style:italic}
-  .rowbtn{border:0;background:none;color:#b33;cursor:pointer;font-size:15px;padding:0 6px}
-  .addrow{margin-top:6px;background:var(--accent);color:#fff;border:0;border-radius:4px;padding:6px 12px;font-weight:bold;cursor:pointer}
-  .note{color:var(--muted);font-size:11px;margin:4px 0 0}
+      .note{color:var(--muted);font-size:11px;margin:4px 0 0}
   .stats th{font-size:9.5px;padding:3px 1px}
   .stats td input{padding:5px 1px}
   .stats .grp th{background:#dde3ec}
@@ -71,7 +69,7 @@
   @media print{
     @page{size:letter landscape;margin:.35in}
     body{background:#fff;font-size:10.5px}
-    .toolbar,.addrow,.rowbtn,.mic,.note,.noprint,.modal{display:none!important}
+    .toolbar,.mic,.note,.noprint,.modal{display:none!important}
     .sheet{box-shadow:none;margin:0;padding:0;max-width:none}
     .sheet+.sheet{page-break-before:always}
     /* fill each landscape page: log rows stretch into the spare space */
@@ -125,15 +123,14 @@
 
   <div class="log-wrap">
   <table class="log">
-    <colgroup><col style="width:13%"><col style="width:26px"><col style="width:8%"><col style="width:9%"><col style="width:27%"><col style="width:27%"><col style="width:13%"><col class="noprint" style="width:26px"></colgroup>
+    <colgroup><col style="width:13%"><col style="width:26px"><col style="width:8%"><col style="width:9%"><col style="width:27%"><col style="width:27%"><col style="width:13%"></colgroup>
     <thead>
-      <tr><th>INCIDENT NUMBER</th><th colspan="2">TIME</th><th>SOURCE</th><th>LOCATION OF ACTIVITIES</th><th>TYPE OF ACTIVITY</th><th>SUPERVISOR, CITATION No. or NAME ON F.I.</th><th class="noprint"></th></tr>
+      <tr><th>INCIDENT NUMBER</th><th colspan="2">TIME</th><th>SOURCE</th><th>LOCATION OF ACTIVITIES</th><th>TYPE OF ACTIVITY</th><th>SUPERVISOR, CITATION No. or NAME ON F.I.</th></tr>
     </thead>
     <tbody id="logBody"></tbody>
   </table>
   </div>
-  <button type="button" class="addrow" data-target="logBody">+ Add activity (R / C pair)</button>
-  <p class="note">R = received / start time, C = cleared time. Each new R time is pre-filled from the previous C time. The C line holds the disposition (e.g. CLR-NUA, CLR-CITE FOR …).</p>
+  <p class="note">R = received / start time, C = cleared time. Setting a C time fills in the next R time. The C line holds the disposition (e.g. CLR-NUA, CLR-CITE FOR …).</p>
 
   <h2>ACTIVITY TOTALS</h2>
   <div class="stats-wrap">
@@ -181,12 +178,11 @@
   </div>
   <div class="log-wrap">
   <table class="log">
-    <colgroup><col style="width:13%"><col style="width:26px"><col style="width:8%"><col style="width:9%"><col style="width:27%"><col style="width:27%"><col style="width:13%"><col class="noprint" style="width:26px"></colgroup>
-    <thead><tr><th>INCIDENT NUMBER</th><th colspan="2">TIME</th><th>SOURCE</th><th>LOCATION OF ACTIVITIES</th><th>TYPE OF ACTIVITY</th><th>SUPERVISOR, CITATION No. or NAME ON F.I.</th><th class="noprint"></th></tr></thead>
+    <colgroup><col style="width:13%"><col style="width:26px"><col style="width:8%"><col style="width:9%"><col style="width:27%"><col style="width:27%"><col style="width:13%"></colgroup>
+    <thead><tr><th>INCIDENT NUMBER</th><th colspan="2">TIME</th><th>SOURCE</th><th>LOCATION OF ACTIVITIES</th><th>TYPE OF ACTIVITY</th><th>SUPERVISOR, CITATION No. or NAME ON F.I.</th></tr></thead>
     <tbody id="logBody2"></tbody>
   </table>
   </div>
-  <button type="button" class="addrow" data-target="logBody2">+ Add activity (R / C pair)</button>
 
   <h2>DAILY PATROL CHECKOUT LIST</h2>
   <div class="checklist" id="checklist"></div>
@@ -337,13 +333,11 @@ function addEntry(d={},focus=false,body=logBody){
     <td><select data-k="source" class="src" aria-label="Source" data-init="${esc(d.source)}">${SRC_OPTS}</select></td>
     <td><input data-k="location" value="${esc(d.location)}" aria-label="Location"></td>
     <td><input data-k="type" value="${esc(d.type)}" aria-label="Type of activity"></td>
-    <td><input data-k="cite" list="supList" value="${esc(d.cite)}" aria-label="Supervisor, citation or F.I. name"></td>
-    <td class="noprint" rowspan="2" style="text-align:center"><button type="button" class="rowbtn" title="Remove this activity">✕</button></td>`;
+    <td><input data-k="cite" list="supList" value="${esc(d.cite)}" aria-label="Supervisor, citation or F.I. name"></td>`;
   const c=document.createElement('tr'); c.className='c';
   c.innerHTML=`<td></td><td class="rc">C</td><td>${timeSelect('ctime',d.ctime,'Cleared time')}</td>
     <td></td><td colspan="2" class="disp"><div class="dispwrap"><input data-k="disp" value="${esc(d.disp)}" placeholder="Disposition (CLR, CLR-NUA, CLR-CITE FOR …)" aria-label="Disposition">${SR?'<button type="button" class="mic" title="Dictate disposition" aria-label="Dictate disposition">'+MIC_SVG+'</button>':''}</div></td>
     <td><input data-k="cite2" list="supList" value="${esc(d.cite2)}" aria-label="Supervisor or citation (clear line)"></td>`;
-  r.querySelector('.rowbtn').onclick=()=>{r.remove();c.remove();save();};
   const mb=c.querySelector('.mic'); if(mb) mb.onclick=()=>dictate(mb, c.querySelector('[data-k="disp"]'));
   body.append(r,c);
   [r,c].forEach(row=>row.querySelectorAll('select[data-init]').forEach(x=>setTime(x,x.dataset.init)));
@@ -357,7 +351,13 @@ function getEntries(body=logBody){
   }
   return out;
 }
-document.querySelectorAll('.addrow[data-target]').forEach(b=>b.onclick=()=>{addEntry({},true,document.getElementById(b.dataset.target));save();});
+/* When a C time is set, fill the next empty R time with it */
+form.addEventListener('change',ev=>{
+  const el=ev.target; if(el.dataset.k!=='ctime'||!el.value) return;
+  const rs=[...logBody.querySelectorAll('[data-k="rtime"]'),...logBody2.querySelectorAll('[data-k="rtime"]')];
+  const cs=[...logBody.querySelectorAll('[data-k="ctime"]'),...logBody2.querySelectorAll('[data-k="ctime"]')];
+  const next=rs[cs.indexOf(el)+1]; if(next&&!next.value){ setTime(next,el.value); save(); }
+});
 
 /* ---------- Calculations ---------- */
 const DAYS=['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
@@ -392,8 +392,9 @@ function apply(data){
   });
   [[logBody,'log',6],[logBody2,'log2',5]].forEach(([body,key,n])=>{
     body.innerHTML='';
-    const log=(data&&data[key]&&data[key].length)?data[key]:null;
-    if(log) log.forEach(e=>addEntry(e,false,body)); else for(let i=0;i<n;i++) addEntry({rtime:(i||body===logBody2)?undefined:''},false,body);
+    const saved=((data&&data[key])||[]).slice();
+    while(saved.length>n && !Object.values(saved[saved.length-1]).some(v=>v)) saved.pop();
+    for(let i=0;i<Math.max(n,saved.length);i++) addEntry(saved[i]||{rtime:''},false,body);
   });
   recalc(); buildSupList();
 }
