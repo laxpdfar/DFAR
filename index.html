@@ -47,6 +47,10 @@
   .sigpad{max-width:560px!important;width:94vw}
   #sigCanvas{display:block;width:100%;height:180px;margin-top:10px;border:1px dashed #889;border-radius:4px;background:#fff linear-gradient(transparent 78%,#c9ced8 78%,#c9ced8 79%,transparent 79%);touch-action:none;cursor:crosshair}
   .modal button.go2{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .mailbox{width:min(460px,94vw);max-width:none!important}
+  .mailbox .fl{display:block;font-size:11px;font-weight:bold;margin-top:10px}
+  .mailbox .fl input{border:1px solid #aab;border-radius:4px;margin-top:3px;padding:7px}
+  .mailbox div{flex-wrap:wrap}
   .rc{width:26px;text-align:center;font-weight:bold;font-size:11px;background:var(--soft)}
   tr.c td{border-bottom:2px solid #999}
   tr.c .disp input{font-style:italic}
@@ -101,6 +105,7 @@
   <h1>DAILY FIELD ACTIVITIES REPORT</h1>
   <span class="status" id="status"></span>
   <button id="btnPrint">Print / PDF</button>
+  <button id="btnEmail">Email</button>
   <button id="btnDocx">Download Word (.docx)</button>
   <button id="btnExport">Save file (.json)</button>
   <label class="btn">Open file<input type="file" id="fileIn" accept=".json,application/json" hidden></label>
@@ -190,6 +195,11 @@
 <datalist id="supList"></datalist>
 
 <div class="modal" id="sigModal"><div class="box sigpad"><b>Signature — <span id="sigWho"></span></b><canvas id="sigCanvas" aria-label="Signature pad"></canvas><p class="note" id="sigHint" style="margin:4px 0 0">Sign with your finger, stylus or mouse.</p><div><button type="button" id="sigClear">Clear</button><button type="button" id="sigCancel">Cancel</button><button type="button" class="go2" id="sigSave">Save signature</button></div></div></div>
+<div class="modal" id="mailModal"><div class="box mailbox"><b>Email this report</b>
+  <label class="fl">To <span style="font-weight:normal;color:#666">(optional, remembered on this device)</span><input id="mailTo" type="email" multiple placeholder="supervisor@example.org" autocomplete="email" style="text-transform:none"></label>
+  <label class="fl">Subject<input id="mailSubj" style="text-transform:none"></label>
+  <p class="note" id="mailNote" style="margin:8px 0 0"></p>
+  <div><button type="button" id="mailCancel">Cancel</button><button type="button" id="mailOpen">Open email</button><button type="button" class="go2" id="mailShare">Email with Word attached</button></div></div></div>
 <div class="modal" id="modal"><div class="box"><b>Start a new blank report?</b><p>This clears everything on the form. Save a file first if you want to keep this one.</p><div><button type="button" id="mNo">Cancel</button><button type="button" class="go" id="mYes">Clear form</button></div></div></div>
 
 <script>
@@ -657,6 +667,54 @@ document.getElementById('sigSave').onclick=()=>{
   renderSigs(); save();
 };
 renderSigs();
+})();
+
+/* ---------- Email the report ---------- */
+(function(){
+const m=document.getElementById('mailModal'), to=document.getElementById('mailTo'), subj=document.getElementById('mailSubj'), note=document.getElementById('mailNote');
+const shareBtn=document.getElementById('mailShare'), openBtn=document.getElementById('mailOpen');
+const fmt=v=>{const x=/^(\d{4})-(\d{2})-(\d{2})$/.exec(v||'');return x?`${x[2]}/${x[3]}/${x[1]}`:'';};
+function info(){
+  const d=collect(), f=d.fields, date=fmt(f.date)||new Date().toLocaleDateString('en-US');
+  const name=(f.o1_name||'').toUpperCase(), filled=[...d.log,...d.log2].filter(e=>Object.values(e).some(v=>v)).length;
+  const subject=['DFAR',date,name,f.watch?'WATCH '+f.watch:'',f.assignment?f.assignment.toUpperCase():''].filter(Boolean).join(' – ');
+  const body=[`Attached is my Daily Field Activities Report.`,``,`Date: ${date}${f.day?' ('+f.day+')':''}`,`Officer: ${name||'-'}${f.o1_serial?' #'+f.o1_serial:''}`,
+    f.o2_name?`Partner: ${f.o2_name.toUpperCase()}`:null,`Watch: ${f.watch||'-'}   Assignment: ${(f.assignment||'-').toUpperCase()}`,
+    `Activities logged: ${filled}`,`Total miles: ${f.total_miles||'-'}`].filter(x=>x!==null).join('\n');
+  const fn=`DFAR_${f.date||new Date().toISOString().slice(0,10)}${f.o1_serial?'_'+f.o1_serial.replace(/\W/g,''):''}.docx`;
+  return {d,subject,body,fn};
+}
+function file(i){ return new File([buildDocx(i.d)],i.fn,{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}); }
+function canShareFiles(){
+  try{ const t=new File(['x'],'t.docx',{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}); return !!(navigator.canShare&&navigator.canShare({files:[t]})); }catch(_){return false;}
+}
+document.getElementById('btnEmail').onclick=()=>{
+  const i=info(); subj.value=i.subject;
+  try{ to.value=localStorage.getItem('dfar_mail_to')||''; }catch(_){}
+  const share=canShareFiles();
+  shareBtn.style.display=share?'':'none';
+  openBtn.textContent=share?'Email without attachment':'Open email';
+  note.textContent=share?'"Email with Word attached" opens your share menu — pick Mail, Outlook or Gmail, then add the recipient there.'
+                        :'This browser can\'t attach files automatically. "Open email" saves the Word file and opens a new email — attach the saved file before sending.';
+  m.classList.add('open');
+};
+const remember=()=>{try{localStorage.setItem('dfar_mail_to',to.value.trim());}catch(_){}};
+shareBtn.onclick=async()=>{
+  remember(); const i=info(); i.subject=subj.value||i.subject;
+  try{ await navigator.share({files:[file(i)],title:i.subject,text:i.body}); m.classList.remove('open'); statusEl.textContent='Shared'; }
+  catch(e){ if(e&&e.name==='AbortError') return; note.textContent='Sharing failed here — use "Email without attachment" and attach the downloaded file.'; }
+};
+openBtn.onclick=()=>{
+  remember(); const i=info(); i.subject=subj.value||i.subject;
+  const a=document.createElement('a');a.href=URL.createObjectURL(file(i));a.download=i.fn;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},800);
+  const body=i.body+`\n\n(Attach: ${i.fn})`;
+  const href=`mailto:${encodeURIComponent(to.value.trim()).replace(/%40/g,'@').replace(/%2C/g,',')}?subject=${encodeURIComponent(i.subject)}&body=${encodeURIComponent(body)}`;
+  setTimeout(()=>{ window.location.href=href; },400);
+  note.textContent=`Saved ${i.fn}. If no email opened, your device has no default mail app — attach the file in your email program.`;
+  statusEl.textContent='Word file saved for email';
+};
+document.getElementById('mailCancel').onclick=()=>m.classList.remove('open');
 })();
 
 })();

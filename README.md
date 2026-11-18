@@ -15,6 +15,7 @@ A fillable version of the LAWA Airport Police Daily Field Activities Report that
 - Daily Patrol Checkout List
 
 ## Saving and printing
+- **Email:** on phones and tablets, opens the share menu with the Word file attached; elsewhere, saves the Word file and opens a pre-filled email to attach it to
 - **Download Word (.docx):** a printable, landscape Word document of both sheets, including signatures
 - **Print / PDF:** prints both sheets in landscape
 - **Save file (.json) / Open file:** keep a report and reopen it later
