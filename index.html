@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daily Field Activities Report</title>
+<style>
+  :root{--ink:#111;--line:#555;--muted:#666;--bg:#eef0f3;--paper:#fff;--accent:#1f3a68;--soft:#f5f7fa;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);font:13px/1.35 Arial,Helvetica,sans-serif;color:var(--ink)}
+  .toolbar{position:sticky;top:0;z-index:10;background:var(--accent);color:#fff;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 14px}
+  .toolbar h1{font-size:15px;margin:0 auto 0 0;letter-spacing:.5px}
+  .toolbar button,.toolbar label.btn{background:#fff;color:var(--accent);border:0;border-radius:4px;padding:6px 11px;font-weight:bold;font-size:12px;cursor:pointer}
+  .toolbar button.danger{background:#f6d6d6;color:#7a1010}
+  .toolbar .status{font-size:11px;opacity:.85;min-width:90px}
+  .sheet{max-width:1200px;margin:16px auto;background:var(--paper);padding:18px 20px;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+  .hdr{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:10px}
+  .hdr .title{font-size:20px;font-weight:bold;letter-spacing:1px}
+  .hdr .org{text-align:right;font-weight:bold;font-size:12px}
+  .hdr .org input{width:38px;text-align:center}
+  h2{font-size:12px;letter-spacing:1px;background:var(--ink);color:#fff;padding:4px 8px;margin:16px 0 0}
+  table{border-collapse:collapse;width:100%}
+  th,td{border:1px solid var(--line);padding:0;vertical-align:middle}
+  th{background:var(--soft);font-size:10.5px;font-weight:bold;padding:4px 3px;text-align:center}
+  input,textarea,select{font:inherit;color:inherit;border:0;background:transparent;width:100%;padding:5px 5px;outline:none;text-transform:uppercase}
+  input:focus,textarea:focus,select:focus{background:#fff8d6}
+  input[type=number]{text-align:center;-moz-appearance:textfield}
+  input[type=number]::-webkit-inner-spin-button{opacity:.4}
+  select.src{cursor:pointer;padding:5px 2px}
+  select.time{text-align:center;cursor:pointer;font-variant-numeric:tabular-nums;padding:5px 2px}
+  .dispwrap{display:flex;align-items:center}
+  .mic{flex:none;border:0;background:none;color:var(--accent);cursor:pointer;padding:3px 6px;margin-right:2px;border-radius:50%;display:flex}
+  .mic:hover{background:var(--soft)}
+  .mic.on{background:#c62828;color:#fff;animation:pulse 1.2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(198,40,40,.6)}70%{box-shadow:0 0 0 8px rgba(198,40,40,0)}100%{box-shadow:0 0 0 0 rgba(198,40,40,0)}}
+  .namewrap{display:flex;align-items:center;gap:4px}
+  .sigbox{display:flex;align-items:center;flex:none}
+  .sigbtn{border:1px solid var(--accent);background:#fff;color:var(--accent);border-radius:4px;font-size:11px;font-weight:bold;padding:3px 7px;cursor:pointer;white-space:nowrap;margin-right:4px}
+  .sigbtn.clr{border:0;color:#b33;padding:2px 4px;font-size:13px}
+  .sigimg{height:34px;width:auto;display:block}
+  .sigpad{max-width:560px!important;width:94vw}
+  #sigCanvas{display:block;width:100%;height:180px;margin-top:10px;border:1px dashed #889;border-radius:4px;background:#fff linear-gradient(transparent 78%,#c9ced8 78%,#c9ced8 79%,transparent 79%);touch-action:none;cursor:crosshair}
+  .modal button.go2{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .rc{width:26px;text-align:center;font-weight:bold;font-size:11px;background:var(--soft)}
+  tr.c td{border-bottom:2px solid #999}
+  tr.c .disp input{font-style:italic}
+  .rowbtn{border:0;background:none;color:#b33;cursor:pointer;font-size:15px;padding:0 6px}
+  .addrow{margin-top:6px;background:var(--accent);color:#fff;border:0;border-radius:4px;padding:6px 12px;font-weight:bold;cursor:pointer}
+  .note{color:var(--muted);font-size:11px;margin:4px 0 0}
+  .stats th{font-size:9.5px;padding:3px 1px}
+  .stats td input{padding:5px 1px}
+  .stats .grp th{background:#dde3ec}
+  .info td{padding:0}
+  .info .lab{display:block;font-size:9.5px;font-weight:bold;color:var(--muted);padding:3px 5px 0}
+  .calc{background:#eef6ee}
+  .checklist{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:8px}
+  .checklist td{padding:4px 6px}
+  .checklist td.yn{width:42px;text-align:center;padding:0}
+  .checklist input[type=radio]{width:auto;transform:scale(1.25);cursor:pointer}
+  .checklist .num{display:inline-block;width:70px;border-bottom:1px solid #999;padding:2px 3px}
+  textarea{resize:vertical;min-height:60px}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:50}
+  .modal.open{display:flex}
+  .modal .box{background:#fff;padding:18px;border-radius:6px;max-width:380px;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+  .modal .box div{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+  .modal button{padding:6px 12px;border-radius:4px;border:1px solid #999;background:#fff;cursor:pointer}
+  .modal button.go{background:#7a1010;color:#fff;border-color:#7a1010}
+  @media print{
+    @page{size:letter landscape;margin:.35in}
+    body{background:#fff;font-size:10.5px}
+    .toolbar,.addrow,.rowbtn,.mic,.sigbtn,.note,.noprint,.modal{display:none!important}
+    .sheet{box-shadow:none;margin:0;padding:0;max-width:none}
+    .sheet+.sheet{page-break-before:always}
+    input,textarea,select{padding:1px 3px}
+    h2{margin-top:8px}
+    .hdr{margin-bottom:6px}
+    .info-wrap,.stats-wrap,.checklist,.checklist+table{page-break-inside:avoid}
+    textarea{min-height:40px}
+    input:focus{background:none}
+    thead{display:table-header-group}
+    tr{page-break-inside:avoid}
+    select{appearance:none}
+    input::placeholder,textarea::placeholder{color:transparent}
+    input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+    input[type=date]::-webkit-calendar-picker-indicator{display:none}
+    textarea{resize:none}
+    h2,th,.rc,.calc{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
+  @media (max-width:760px){.checklist{grid-template-columns:1fr}.log-wrap,.stats-wrap,.info-wrap{overflow-x:auto}.log{min-width:820px}.stats{min-width:1000px}.info{min-width:820px}}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <h1>DAILY FIELD ACTIVITIES REPORT</h1>
+  <span class="status" id="status"></span>
+  <button id="btnPrint">Print / PDF</button>
+  <button id="btnDocx">Download Word (.docx)</button>
+  <button id="btnExport">Save file (.json)</button>
+  <label class="btn">Open file<input type="file" id="fileIn" accept=".json,application/json" hidden></label>
+  <button class="danger" id="btnClear">New blank report</button>
+</div>
+
+<form id="f" autocomplete="off" onsubmit="return false">
+
+<!-- ================= SHEET 1 ================= -->
+<section class="sheet">
+  <div class="hdr">
+    <div class="title">DAILY FIELD ACTIVITIES REPORT</div>
+    <div class="org">AIRPORT POLICE<br>LOS ANGELES WORLD AIRPORTS &nbsp; SHEET # <input name="sheet_no" value="1"> OF <input name="sheet_of" value="2"></div>
+  </div>
+
+  <div class="log-wrap">
+  <table class="log">
+    <colgroup><col style="width:13%"><col style="width:26px"><col style="width:8%"><col style="width:9%"><col style="width:27%"><col style="width:27%"><col style="width:13%"><col class="noprint" style="width:26px"></colgroup>
+    <thead>
+      <tr><th>INCIDENT NUMBER</th><th colspan="2">TIME</th><th>SOURCE</th><th>LOCATION OF ACTIVITIES</th><th>TYPE OF ACTIVITY</th><th>SUPERVISOR, CITATION No. or NAME ON F.I.</th><th class="noprint"></th></tr>
+    </thead>
+    <tbody id="logBody"></tbody>
+  </table>
+  </div>
+  <button type="button" class="addrow" data-target="logBody">+ Add activity (R / C pair)</button>
+  <p class="note">R = received / start time, C = cleared time. Each new R time is pre-filled from the previous C time. The C line holds the disposition (e.g. CLR-NUA, CLR-CITE FOR …).</p>
+
+  <h2>ACTIVITY TOTALS</h2>
+  <div class="stats-wrap">
+  <table class="stats" id="stats"></table>
+  </div>
+
+  <h2>OFFICER / VEHICLE</h2>
+  <div class="info-wrap">
+  <table class="info">
+    <thead><tr><th style="width:26px"></th><th style="width:20%">OFFICER NAME</th><th>SERIAL #</th><th>BADGE #</th><th>RADIO #</th><th>ON DUTY</th><th>OFF DUTY</th><th colspan="2" style="width:22%"></th><th colspan="2" style="width:18%"></th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="rc">1</td>
+        <td><div class="namewrap"><input name="o1_name" placeholder="LAST, FIRST"><input type="hidden" name="o1_sig"><span class="sigbox" id="sigBox1"></span></div></td><td><input name="o1_serial"></td><td><input name="o1_badge"></td><td><input name="o1_radio"></td>
+        <td><select name="o1_on" class="time" aria-label="o1_on"></select></td><td><select name="o1_off" class="time" aria-label="o1_off"></select></td>
+        <td><span class="lab">WATCH</span><select name="watch"><option></option><option>1</option><option>2</option><option>3</option></select></td>
+        <td><span class="lab">DAY</span><select name="day" id="day" aria-label="Day"><option></option><option>SUNDAY</option><option>MONDAY</option><option>TUESDAY</option><option>WEDNESDAY</option><option>THURSDAY</option><option>FRIDAY</option><option>SATURDAY</option></select></td>
+        <td><span class="lab">VEHICLE SHOP #</span><input name="vehicle"></td>
+        <td><span class="lab">MILEAGE EOW</span><input type="number" name="mile_eow" id="mileEow"></td>
+      </tr>
+      <tr>
+        <td class="rc">2</td>
+        <td><div class="namewrap"><input name="o2_name" placeholder="LAST, FIRST"><input type="hidden" name="o2_sig"><span class="sigbox" id="sigBox2"></span></div></td><td><input name="o2_serial"></td><td><input name="o2_badge"></td><td><input name="o2_radio"></td>
+        <td><select name="o2_on" class="time" aria-label="o2_on"></select></td><td><select name="o2_off" class="time" aria-label="o2_off"></select></td>
+        <td><span class="lab">ASSIGNMENT</span><input name="assignment"></td>
+        <td><span class="lab">DATE</span><input type="date" name="date" id="date"></td>
+        <td><span class="lab">CITE DATE</span><input type="date" name="cite_date"></td>
+        <td><span class="lab">MILEAGE OUT</span><input type="number" name="mile_out" id="mileOut"></td>
+      </tr>
+      <tr>
+        <td colspan="7" style="border:0"></td>
+        <td colspan="3"><span class="lab">SUPERVISOR APPROVING</span><input name="supervisor"></td>
+        <td class="calc"><span class="lab">TOTAL MILES</span><input name="total_miles" id="totalMiles" readonly tabindex="-1"></td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- ================= SHEET 2 ================= -->
+<section class="sheet">
+  <div class="hdr">
+    <div class="title">DAILY FIELD ACTIVITIES REPORT <span style="font-size:13px;letter-spacing:0">(CONTINUATION)</span></div>
+    <div class="org">AIRPORT POLICE<br>LOS ANGELES WORLD AIRPORTS &nbsp; SHEET # <input name="sheet2_no" value="2"> OF <input name="sheet2_of" value="2"></div>
+  </div>
+  <div class="log-wrap">
+  <table class="log">
+    <colgroup><col style="width:13%"><col style="width:26px"><col style="width:8%"><col style="width:9%"><col style="width:27%"><col style="width:27%"><col style="width:13%"><col class="noprint" style="width:26px"></colgroup>
+    <thead><tr><th>INCIDENT NUMBER</th><th colspan="2">TIME</th><th>SOURCE</th><th>LOCATION OF ACTIVITIES</th><th>TYPE OF ACTIVITY</th><th>SUPERVISOR, CITATION No. or NAME ON F.I.</th><th class="noprint"></th></tr></thead>
+    <tbody id="logBody2"></tbody>
+  </table>
+  </div>
+  <button type="button" class="addrow" data-target="logBody2">+ Add activity (R / C pair)</button>
+
+  <h2>DAILY PATROL CHECKOUT LIST</h2>
+  <div class="checklist" id="checklist"></div>
+  <table style="margin-top:14px"><tr><td style="padding:6px"><div style="display:flex;align-items:center;justify-content:space-between"><span class="lab" style="font-size:10px;font-weight:bold">COMMENTS:</span><span id="commentsMic"></span></div><textarea name="comments" id="comments" aria-label="Comments"></textarea></td></tr></table>
+  <p class="note">Tip: "Print / PDF" prints both sheets in landscape; choose "Save as PDF" in the print dialog to keep a copy.</p>
+</section>
+</form>
+<datalist id="supList"></datalist>
+
+<div class="modal" id="sigModal"><div class="box sigpad"><b>Signature — <span id="sigWho"></span></b><canvas id="sigCanvas" aria-label="Signature pad"></canvas><p class="note" id="sigHint" style="margin:4px 0 0">Sign with your finger, stylus or mouse.</p><div><button type="button" id="sigClear">Clear</button><button type="button" id="sigCancel">Cancel</button><button type="button" class="go2" id="sigSave">Save signature</button></div></div></div>
+<div class="modal" id="modal"><div class="box"><b>Start a new blank report?</b><p>This clears everything on the form. Save a file first if you want to keep this one.</p><div><button type="button" id="mNo">Cancel</button><button type="button" class="go" id="mYes">Clear form</button></div></div></div>
+
+<script>
+(function(){
+const KEY='dfar_form_v1';
+const form=document.getElementById('f');
+const logBody=document.getElementById('logBody'), logBody2=document.getElementById('logBody2');
+const statusEl=document.getElementById('status');
+
+/* ---------- Stats table ---------- */
+const GROUPS=[
+  ['ACTIVITY',['RADIO','OBS','CTZ','ASST']],
+  ['ENFORCEMENT',['PKG','PSD','FIELD','F.I.']],
+  ['ARREST',['FEL','MISD','WARR','5150']],
+  ['REPORTS',['EMP','ARR','INJ','T/C','FOUND','SABOT','BADGE','PIR','PROP','VEH']],
+  ['ID CHECKS',['ICS','AOA','D/L','LEO']],
+  ['SEC CHECKS',['PERIM','ALRM']],
+  ['',['SPLD']],['',['ESCT']]
+];
+const slug=s=>s.toLowerCase().replace(/[^a-z0-9]/g,'');
+(function buildStats(){
+  const t=document.getElementById('stats');
+  let g='<thead><tr class="grp"><th rowspan="2" style="width:26px"></th>';
+  let c='<tr>';
+  GROUPS.forEach(([name,cols])=>{
+    if(name) g+=`<th colspan="${cols.length}">${name}</th>`; else g+=`<th rowspan="2">${cols[0]}</th>`;
+    if(name) cols.forEach(x=>c+=`<th>${x}</th>`);
+  });
+  g+='</tr>'; c+='</tr></thead><tbody>';
+  let rows='';
+  [1,2].forEach(r=>{
+    rows+=`<tr><td class="rc">${r}</td>`;
+    GROUPS.forEach(([,cols])=>cols.forEach(x=>rows+=`<td><input type="number" min="0" name="s${r}_${slug(x)}" aria-label="Officer ${r} ${x}"></td>`));
+    rows+='</tr>';
+  });
+  t.innerHTML=g+c+rows+'</tbody>';
+})();
+
+/* ---------- Checklist ---------- */
+const CHECK=[
+  [['First aid kit'],['Bloodborne pathogen kit'],['Emergency blanket'],['Glove (1 box)'],['Water (1 bottle)'],['Trauma kit'],['Fire extinguisher']],
+  [['Flares (1 box min., 2 max)'],['Cones (6)'],['Yellow police tape'],['Fuel card'],['Camera and film'],['Lights / siren check'],['MDS operational']],
+  [['Print kit'],['K-9 pole'],['Shotgun',1],['40mm launcher',1],['Taser',1]]
+];
+(function buildChecklist(){
+  const wrap=document.getElementById('checklist');
+  CHECK.forEach(col=>{
+    let h='<table><thead><tr><th style="text-align:left;padding-left:6px">ITEM</th><th>YES</th><th>NO</th></tr></thead><tbody>';
+    col.forEach(([label,hasNo])=>{
+      const k='ck_'+slug(label);
+      h+=`<tr><td>${label.toUpperCase()}${hasNo?` (No.: <input class="num" name="${k}_no" aria-label="${label} number">)`:''}</td>
+      <td class="yn"><input type="radio" name="${k}" value="yes" aria-label="${label} yes"></td>
+      <td class="yn"><input type="radio" name="${k}" value="no" aria-label="${label} no"></td></tr>`;
+    });
+    wrap.insertAdjacentHTML('beforeend',h+'</tbody></table>');
+  });
+})();
+
+/* ---------- Dictation (Web Speech API) ---------- */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+const MIC_SVG='<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg>';
+let rec=null, recBtn=null;
+function stopDictation(){ if(rec){ try{rec.stop();}catch(_){} } }
+function dictate(btn,input){
+  if(rec){ const same=recBtn===btn; stopDictation(); if(same) return; }
+  const r=new SR(); r.lang='en-US'; r.interimResults=true; r.continuous=true;
+  const base=input.value.trim(); let finalTxt='';
+  r.onresult=ev=>{
+    let interim='';
+    for(let i=ev.resultIndex;i<ev.results.length;i++){
+      const t=ev.results[i][0].transcript;
+      if(ev.results[i].isFinal) finalTxt+=t; else interim+=t;
+    }
+    input.value=[base,(finalTxt+interim).trim()].filter(Boolean).join(' ').toUpperCase();
+  };
+  r.onerror=ev=>{
+    statusEl.textContent = ev.error==='not-allowed'||ev.error==='service-not-allowed' ? 'Microphone blocked — allow mic access' :
+      ev.error==='no-speech' ? 'No speech heard' : 'Dictation error: '+ev.error;
+  };
+  r.onend=()=>{ btn.classList.remove('on'); rec=null; recBtn=null; input.value=input.value.replace(/\s+/g,' ').trim(); save(); if(!/error|blocked|heard/i.test(statusEl.textContent)) statusEl.textContent='Dictation done'; };
+  try{ r.start(); }catch(e){ statusEl.textContent='Could not start dictation'; return; }
+  rec=r; recBtn=btn; btn.classList.add('on'); statusEl.textContent='Listening… tap mic to stop';
+  input.focus();
+}
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') stopDictation(); });
+if(SR){ const h=document.getElementById('commentsMic'); h.innerHTML='<button type="button" class="mic" title="Dictate comments" aria-label="Dictate comments">'+MIC_SVG+'</button>'; const b=h.firstChild; b.onclick=()=>dictate(b,document.getElementById('comments')); }
+
+/* ---------- Time dropdowns (24-hr, 5-min steps) ---------- */
+const TIMES=[];for(let m=0;m<1440;m+=5)TIMES.push(String(Math.floor(m/60)).padStart(2,'0')+String(m%60).padStart(2,'0'));
+const TIME_OPTS='<option value=""></option>'+TIMES.map(t=>`<option>${t}</option>`).join('');
+function setTime(sel,v){
+  v=v==null?'':String(v);
+  if(v&&![...sel.options].some(o=>o.value===v)){const o=new Option(v,v);sel.add(o,1);} // keep odd legacy values
+  sel.value=v;
+}
+const SRC_OPTS='<option value=""></option>'+GROUPS.map(([g,cols])=>g?`<optgroup label="${g}">${cols.map(c=>`<option>${c}</option>`).join('')}</optgroup>`:`<option>${cols[0]}</option>`).join('');
+function timeSelect(k,v,label){return `<select data-k="${k}" class="time" aria-label="${label}" data-init="${esc(v)}">${TIME_OPTS}</select>`;}
+document.querySelectorAll('select.time[name]').forEach(s=>s.innerHTML=TIME_OPTS);
+
+/* ---------- Supervisor list (from watch roster) ---------- */
+const SUPS={
+ '1':[['LT. VACCARIELLO','LT'],['CANAL, J','AWC'],['ROGERS, S'],['YANEZ, R'],['HARRIS, S'],['PAN, J'],['MAY, K'],['HARVEY, V'],['AVETYAN, A'],['AMINIAN, A'],['SOLIS, E'],['SANTANA, V']],
+ '2':[['AUTRY, B','AWC'],['GONZALES, J'],['CARLOS, R'],['MOORE, T'],['KUO, E'],['LALICKER, D'],['HOLCOMB, D'],['HURD, A'],['SPOLARICH, B'],['LUIS, J'],['ANDRADE, L'],['LAW, M']],
+ '3':[['TORRES, A','LT'],['EDWARDS, M','AWC'],['YOON, C'],['LOPEZ, B'],['LOZANO, M'],['CO, A'],['ARMENTA, X'],['OUTLEY, R'],['MALDONADO, R'],['CHOI, D'],['DEAR, M'],['ROUZAN, R']]
+};
+function buildSupList(){
+  const w=(form.querySelector('[name="watch"]')||{}).value;
+  const key=n=>n.replace(/^LT\.\s*/,'');
+  const all=Object.entries(SUPS).flatMap(([k,list])=>list.map(x=>[k,...x]));
+  all.sort((a,b)=>((b[0]===w)-(a[0]===w)) || key(a[1]).localeCompare(key(b[1])));
+  document.getElementById('supList').innerHTML=all.map(([k,n,rank])=>
+    `<option value="${n}" label="W${k} SUPV${rank?' · '+rank:''}"></option>`).join('');
+}
+buildSupList();
+form.querySelector('[name="watch"]').addEventListener('change',buildSupList);
+
+/* Watch -> first R start time (only replaces a blank or another watch's default) */
+const WATCH_START={'1':'0500','2':'1300','3':'2030'};
+form.querySelector('[name="watch"]').addEventListener('change',ev=>{
+  const first=logBody.querySelector('[data-k="rtime"]'); if(!first) return;
+  const start=WATCH_START[ev.target.value];
+  if(start && (!first.value || Object.values(WATCH_START).includes(first.value))){ setTime(first,start); save(); }
+});
+
+/* ---------- Activity log ---------- */
+function esc(v){return String(v??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}
+function addEntry(d={},focus=false,body=logBody){
+  const scope=body===logBody2?[logBody,logBody2]:[logBody];
+  const prevC=scope.flatMap(b=>[...b.querySelectorAll('[data-k="ctime"]')]).filter(x=>x.value).pop();
+  if(d.rtime===undefined && prevC) d.rtime=prevC.value;
+  const r=document.createElement('tr'); r.className='r';
+  r.innerHTML=`<td><input data-k="incident" value="${esc(d.incident)}" aria-label="Incident number"></td>
+    <td class="rc">R</td><td>${timeSelect('rtime',d.rtime,'Received time')}</td>
+    <td><select data-k="source" class="src" aria-label="Source" data-init="${esc(d.source)}">${SRC_OPTS}</select></td>
+    <td><input data-k="location" value="${esc(d.location)}" aria-label="Location"></td>
+    <td><input data-k="type" value="${esc(d.type)}" aria-label="Type of activity"></td>
+    <td><input data-k="cite" list="supList" value="${esc(d.cite)}" aria-label="Supervisor, citation or F.I. name"></td>
+    <td class="noprint" rowspan="2" style="text-align:center"><button type="button" class="rowbtn" title="Remove this activity">✕</button></td>`;
+  const c=document.createElement('tr'); c.className='c';
+  c.innerHTML=`<td></td><td class="rc">C</td><td>${timeSelect('ctime',d.ctime,'Cleared time')}</td>
+    <td></td><td colspan="2" class="disp"><div class="dispwrap"><input data-k="disp" value="${esc(d.disp)}" placeholder="Disposition (CLR, CLR-NUA, CLR-CITE FOR …)" aria-label="Disposition">${SR?'<button type="button" class="mic" title="Dictate disposition" aria-label="Dictate disposition">'+MIC_SVG+'</button>':''}</div></td>
+    <td><input data-k="cite2" list="supList" value="${esc(d.cite2)}" aria-label="Supervisor or citation (clear line)"></td>`;
+  r.querySelector('.rowbtn').onclick=()=>{r.remove();c.remove();save();};
+  const mb=c.querySelector('.mic'); if(mb) mb.onclick=()=>dictate(mb, c.querySelector('[data-k="disp"]'));
+  body.append(r,c);
+  [r,c].forEach(row=>row.querySelectorAll('select[data-init]').forEach(x=>setTime(x,x.dataset.init)));
+  if(focus) r.querySelector('[data-k="incident"]').focus();
+}
+function getEntries(body=logBody){
+  const out=[];const rows=[...body.children];
+  for(let i=0;i<rows.length;i+=2){
+    const e={};rows[i].querySelectorAll('input,select').forEach(x=>e[x.dataset.k]=x.value);
+    rows[i+1].querySelectorAll('input,select').forEach(x=>e[x.dataset.k]=x.value);out.push(e);
+  }
+  return out;
+}
+document.querySelectorAll('.addrow[data-target]').forEach(b=>b.onclick=()=>{addEntry({},true,document.getElementById(b.dataset.target));save();});
+
+/* ---------- Calculations ---------- */
+const DAYS=['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+function recalc(){
+  const o=parseFloat(document.getElementById('mileOut').value), e=parseFloat(document.getElementById('mileEow').value);
+  document.getElementById('totalMiles').value=(isFinite(o)&&isFinite(e))?(e-o):'';
+}
+document.getElementById('date').addEventListener('change',ev=>{
+  const v=ev.target.value; if(!v) return;
+  const [y,m,d]=v.split('-').map(Number);
+  document.getElementById('day').value=DAYS[new Date(y,m-1,d).getDay()];
+});
+
+/* ---------- Save / load ---------- */
+function collect(){
+  const data={fields:{},log:getEntries(logBody),log2:getEntries(logBody2)};
+  form.querySelectorAll('[name]').forEach(el=>{
+    if(el.type==='radio'){ if(el.checked) data.fields[el.name]=el.value; }
+    else if(el.type!=='file') data.fields[el.name]=el.value;
+  });
+  return data;
+}
+function apply(data){
+  form.querySelectorAll('[name]').forEach(el=>{
+    if(el.type==='radio') el.checked=false; else if(!['sheet_no','sheet_of','sheet2_no','sheet2_of','times_note'].includes(el.name)) el.value='';
+  });
+  const f=(data&&data.fields)||{};
+  Object.entries(f).forEach(([k,v])=>{
+    form.querySelectorAll(`[name="${CSS.escape(k)}"]`).forEach(el=>{
+      if(el.type==='radio') el.checked=(el.value===v); else if(el.classList.contains('time')) setTime(el,v); else el.value=v;
+    });
+  });
+  [[logBody,'log',6],[logBody2,'log2',5]].forEach(([body,key,n])=>{
+    body.innerHTML='';
+    const log=(data&&data[key]&&data[key].length)?data[key]:null;
+    if(log) log.forEach(e=>addEntry(e,false,body)); else for(let i=0;i<n;i++) addEntry({rtime:(i||body===logBody2)?undefined:''},false,body);
+  });
+  recalc(); buildSupList(); if(window.renderSigs) renderSigs();
+}
+let t;
+function save(){
+  recalc();
+  clearTimeout(t);
+  t=setTimeout(()=>{
+    try{localStorage.setItem(KEY,JSON.stringify(collect()));statusEl.textContent='Saved '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});}
+    catch(_){statusEl.textContent='Autosave unavailable';}
+  },300);
+}
+form.addEventListener('input',save);form.addEventListener('change',save);
+
+let initial=null;
+try{initial=JSON.parse(localStorage.getItem(KEY)||'null');}catch(_){}
+apply(initial);
+if(initial) statusEl.textContent='Restored draft';
+
+/* ---------- Toolbar ---------- */
+document.getElementById('btnPrint').onclick=()=>{try{window.print();}catch(_){statusEl.textContent='Printing blocked here';}};
+document.getElementById('btnExport').onclick=()=>{
+  const data=collect();
+  const date=data.fields.date||new Date().toISOString().slice(0,10);
+  const who=(data.fields.o1_serial||'').replace(/\W/g,'');
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download=`DFAR_${date}${who?'_'+who:''}.json`;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
+};
+document.getElementById('fileIn').onchange=ev=>{
+  const file=ev.target.files[0]; if(!file) return;
+  const rd=new FileReader();
+  rd.onload=()=>{try{apply(JSON.parse(rd.result));save();statusEl.textContent='Opened '+file.name;}catch(_){statusEl.textContent='Could not read that file';}};
+  rd.readAsText(file); ev.target.value='';
+};
+const modal=document.getElementById('modal');
+document.getElementById('btnClear').onclick=()=>modal.classList.add('open');
+document.getElementById('mNo').onclick=()=>modal.classList.remove('open');
+document.getElementById('mYes').onclick=()=>{modal.classList.remove('open');try{localStorage.removeItem(KEY);}catch(_){} apply(null);statusEl.textContent='New report';};
+
+/* ---------- Word (.docx) export — no external libraries ---------- */
+(function(){
+const U=v=>String(v??'').toUpperCase();
+const X=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const fmtDate=v=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(v||'');return m?`${m[2]}/${m[3]}/${m[1]}`:U(v);};
+
+function run(t,o={}){
+  const pr=(o.b?'<w:b/>':'')+(o.color?`<w:color w:val="${o.color}"/>`:'')+`<w:sz w:val="${o.sz||16}"/><w:szCs w:val="${o.sz||16}"/>`;
+  return `<w:r><w:rPr>${pr}</w:rPr><w:t xml:space="preserve">${X(t)}</w:t></w:r>`;
+}
+function para(runs,o={}){
+  const pr=`<w:spacing w:before="0" w:after="0"/>`+(o.align?`<w:jc w:val="${o.align}"/>`:'')+(o.shade?`<w:shd w:val="clear" w:color="auto" w:fill="${o.shade}"/>`:'')+(o.keep?'<w:keepNext/>':'');
+  return `<w:p><w:pPr>${pr}</w:pPr>${runs}</w:p>`;
+}
+// content: string | {lab, val} | array of paragraphs xml
+function cell(content,o={}){
+  let pr=`<w:tcW w:w="${o.w||0}" w:type="dxa"/>`;
+  if(o.span>1) pr+=`<w:gridSpan w:val="${o.span}"/>`;
+  if(o.vm) pr+=o.vm==='start'?'<w:vMerge w:val="restart"/>':'<w:vMerge/>';
+  if(o.noBorder) pr+='<w:tcBorders><w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="nil"/><w:right w:val="nil"/></w:tcBorders>';
+  if(o.shade) pr+=`<w:shd w:val="clear" w:color="auto" w:fill="${o.shade}"/>`;
+  pr+=`<w:vAlign w:val="${o.valign||'center'}"/>`;
+  let body;
+  if(content&&typeof content==='object'&&'lab' in content){
+    body=para(run(content.lab,{b:true,sz:12,color:'555555'}))+para(run(U(content.val),{sz:o.sz||16}),{align:o.align});
+  } else body=para(run(o.raw?content:U(content),{b:o.b,sz:o.sz}),{align:o.align});
+  return `<w:tc><w:tcPr>${pr}</w:tcPr>${body}</w:tc>`;
+}
+function row(cells,o={}){
+  const pr=(o.h?`<w:trHeight w:val="${o.h}" w:hRule="atLeast"/>`:'')+(o.header?'<w:tblHeader/>':'')+'<w:cantSplit/>';
+  return `<w:tr><w:trPr>${pr}</w:trPr>${cells.join('')}</w:tr>`;
+}
+function table(grid,rows,o={}){
+  const b=o.noBorders?'nil':'single';
+  const borders=['top','left','bottom','right','insideH','insideV'].map(k=>`<w:${k} w:val="${b}" w:sz="4" w:space="0" w:color="555555"/>`).join('');
+  const total=grid.reduce((a,c)=>a+c,0);
+  return `<w:tbl><w:tblPr><w:tblW w:w="${total}" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders>${borders}</w:tblBorders><w:tblCellMar><w:left w:w="50" w:type="dxa"/><w:right w:w="50" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>${grid.map(g=>`<w:gridCol w:w="${g}"/>`).join('')}</w:tblGrid>${rows.join('')}</w:tbl>`;
+}
+let IMGS=[];
+function b64bytes(dataUrl){const b=atob(dataUrl.split(',')[1]);const u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u;}
+function sigRun(dataUrl,wIn,hIn){
+  if(!dataUrl) return '';
+  const id=IMGS.length+1, rid='rIdImg'+id, cx=Math.round(wIn*914400), cy=Math.round(hIn*914400);
+  IMGS.push([`word/media/sig${id}.png`,b64bytes(dataUrl),rid,`media/sig${id}.png`]);
+  return `<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${id}" name="Signature ${id}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${id}" name="sig${id}.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;
+}
+const W=14688, GRAY='E9EDF2', DARK='000000';
+const gap=(h=120)=>`<w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="${h}" w:lineRule="exact"/></w:pPr></w:p>`;
+const bar=t=>para(run(t,{b:true,sz:16,color:'FFFFFF'}),{shade:DARK,keep:true});
+
+function header(title,sub,sheetTxt){
+  return table([9000,W-9000],[row([
+    cell('',{w:9000}).replace(/<w:p>.*<\/w:p>/s,para(run(title,{b:true,sz:30})+(sub?run('  '+sub,{b:true,sz:18}):''))),
+    `<w:tc><w:tcPr><w:tcW w:w="${W-9000}" w:type="dxa"/><w:vAlign w:val="bottom"/></w:tcPr>${para(run('AIRPORT POLICE',{b:true,sz:16}),{align:'right'})}${para(run('LOS ANGELES WORLD AIRPORTS   '+sheetTxt,{b:true,sz:16}),{align:'right'})}</w:tc>`
+  ])],{noBorders:true})+para('',{})+`<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="12" w:space="1" w:color="000000"/></w:pBdr><w:spacing w:before="0" w:after="80"/></w:pPr></w:p>`;
+}
+
+const LOG_GRID=[1900,360,800,1100,3900,3900,2728];
+function logTable(entries){
+  const H=['INCIDENT NUMBER','TIME','','SOURCE','LOCATION OF ACTIVITIES','TYPE OF ACTIVITY','SUPERVISOR, CITATION No. or NAME ON F.I.'];
+  const hdr=row([
+    cell(H[0],{w:1900,b:true,sz:14,shade:GRAY,align:'center'}),
+    cell(H[1],{w:1160,span:2,b:true,sz:14,shade:GRAY,align:'center'}),
+    cell(H[3],{w:1100,b:true,sz:14,shade:GRAY,align:'center'}),
+    cell(H[4],{w:3900,b:true,sz:14,shade:GRAY,align:'center'}),
+    cell(H[5],{w:3900,b:true,sz:14,shade:GRAY,align:'center'}),
+    cell(H[6],{w:2728,b:true,sz:13,shade:GRAY,align:'center'})
+  ],{header:true,h:420});
+  const rows=[hdr];
+  entries.forEach(e=>{
+    rows.push(row([cell(e.incident,{w:1900}),cell('R',{w:360,b:true,align:'center',shade:GRAY}),cell(e.rtime,{w:800,align:'center'}),cell(e.source,{w:1100,align:'center'}),cell(e.location,{w:3900}),cell(e.type,{w:3900}),cell(e.cite,{w:2728})],{h:300}));
+    rows.push(row([cell('',{w:1900}),cell('C',{w:360,b:true,align:'center',shade:GRAY}),cell(e.ctime,{w:800,align:'center'}),cell('',{w:1100}),cell(e.disp,{w:7800,span:2}),cell(e.cite2,{w:2728})],{h:300}));
+  });
+  return table(LOG_GRID,rows);
+}
+
+function statsTable(f){
+  const cols=GROUPS.flatMap(([,c])=>c), n=cols.length, lw=288, cw=Math.floor((W-lw)/n);
+  const grid=[lw,...cols.map(()=>cw)];
+  const r1=[cell('',{w:lw,vm:'start',shade:GRAY})], r2=[cell('',{w:lw,vm:'cont',shade:GRAY})];
+  GROUPS.forEach(([g,c])=>{
+    if(g){ r1.push(cell(g,{w:cw*c.length,span:c.length,b:true,sz:12,shade:'D5DCE6',align:'center'})); c.forEach(x=>r2.push(cell(x,{w:cw,b:true,sz:9,shade:GRAY,align:'center',raw:true}))); }
+    else { r1.push(cell(c[0],{w:cw,vm:'start',b:true,sz:11,shade:GRAY,align:'center'})); r2.push(cell('',{w:cw,vm:'cont',shade:GRAY})); }
+  });
+  const slug=s=>s.toLowerCase().replace(/[^a-z0-9]/g,'');
+  const data=[1,2].map(r=>row([cell(String(r),{w:lw,b:true,align:'center',shade:GRAY}),...cols.map(x=>cell(f[`s${r}_${slug(x)}`],{w:cw,align:'center'}))],{h:300}));
+  return table(grid,[row(r1,{h:240}),row(r2,{h:240}),...data]);
+}
+
+function infoTable(f){
+  const g=[300,2600,1300,1100,1100,900,900], rest=W-g.reduce((a,b)=>a+b,0), q=Math.floor(rest/4), last=rest-q*3;
+  const grid=[...g,q,q,q,last];
+  const H=['','OFFICER NAME','SERIAL #','BADGE #','RADIO #','ON DUTY','OFF DUTY'];
+  const hdr=row([...H.map((h,i)=>cell(h,{w:g[i],b:true,sz:13,shade:GRAY,align:'center'})),cell('',{w:q,shade:GRAY}),cell('',{w:q,shade:GRAY}),cell('',{w:q,shade:GRAY}),cell('',{w:last,shade:GRAY})],{h:320});
+  const off=i=>[cell(String(i),{w:300,b:true,align:'center',shade:GRAY}),`<w:tc><w:tcPr><w:tcW w:w="2600" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr>${para(run(U(f[`o${i}_name`])))}${f[`o${i}_sig`]?para(sigRun(f[`o${i}_sig`],1.35,0.42)):''}</w:tc>`,cell(f[`o${i}_serial`],{w:1300,align:'center'}),cell(f[`o${i}_badge`],{w:1100,align:'center'}),cell(f[`o${i}_radio`],{w:1100,align:'center'}),cell(f[`o${i}_on`],{w:900,align:'center'}),cell(f[`o${i}_off`],{w:900,align:'center'})];
+  const r1=row([...off(1),cell({lab:'WATCH',val:f.watch},{w:q}),cell({lab:'DAY',val:f.day},{w:q}),cell({lab:'VEHICLE SHOP #',val:f.vehicle},{w:q}),cell({lab:'MILEAGE EOW',val:f.mile_eow},{w:last})],{h:460});
+  const r2=row([...off(2),cell({lab:'ASSIGNMENT',val:f.assignment},{w:q}),cell({lab:'DATE',val:fmtDate(f.date)},{w:q}),cell({lab:'CITE DATE',val:fmtDate(f.cite_date)},{w:q}),cell({lab:'MILEAGE OUT',val:f.mile_out},{w:last})],{h:460});
+  const r3=row([cell('',{w:g.reduce((a,b)=>a+b,0),span:7,noBorder:true}),cell({lab:'SUPERVISOR APPROVING',val:f.supervisor},{w:q*3,span:3}),cell({lab:'TOTAL MILES',val:f.total_miles},{w:last})],{h:460});
+  return table(grid,[hdr,r1,r2,r3]);
+}
+
+function checklistTable(f){
+  const iw=3696, yw=600, grid=[iw,yw,yw,iw,yw,yw,iw,yw,yw];
+  const slug=s=>s.toLowerCase().replace(/[^a-z0-9]/g,'');
+  const hdr=row([0,1,2].flatMap(()=>[cell('ITEM',{w:iw,b:true,sz:14,shade:GRAY}),cell('YES',{w:yw,b:true,sz:14,shade:GRAY,align:'center'}),cell('NO',{w:yw,b:true,sz:14,shade:GRAY,align:'center'})]),{header:true,h:280});
+  const max=Math.max(...CHECK.map(c=>c.length)), rows=[hdr];
+  for(let i=0;i<max;i++){
+    rows.push(row(CHECK.flatMap(col=>{
+      const it=col[i]; if(!it) return [cell('',{w:iw}),cell('',{w:yw}),cell('',{w:yw})];
+      const [label,hasNo]=it, k='ck_'+slug(label), v=f[k];
+      const txt=U(label)+(hasNo?` (No.: ${U(f[k+'_no'])||'______'})`:'');
+      return [cell(txt,{w:iw,raw:true}),cell(v==='yes'?'X':'',{w:yw,b:true,align:'center'}),cell(v==='no'?'X':'',{w:yw,b:true,align:'center'})];
+    }),{h:300}));
+  }
+  return table(grid,rows);
+}
+
+function commentsTable(f){
+  const lines=String(f.comments||'').split(/\n/);
+  const body=para(run('COMMENTS:',{b:true,sz:14}))+lines.map(l=>para(run(U(l),{sz:16}))).join('');
+  return table([W],[`<w:tr><w:trPr><w:trHeight w:val="1300" w:hRule="atLeast"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="${W}" w:type="dxa"/></w:tcPr>${body}</w:tc></w:tr>`]);
+}
+
+function documentXml(d){
+  const f=d.fields;
+  const s1=`SHEET # ${U(f.sheet_no)||'1'} OF ${U(f.sheet_of)||'2'}`, s2=`SHEET # ${U(f.sheet2_no)||'2'} OF ${U(f.sheet2_of)||'2'}`;
+  const body=[
+    header('DAILY FIELD ACTIVITIES REPORT','',s1),
+    logTable(d.log), gap(), bar('ACTIVITY TOTALS'), statsTable(f), gap(), bar('OFFICER / VEHICLE'), infoTable(f),
+    '<w:p><w:r><w:br w:type="page"/></w:r></w:p>',
+    header('DAILY FIELD ACTIVITIES REPORT','(CONTINUATION)',s2),
+    logTable(d.log2), gap(), bar('DAILY PATROL CHECKOUT LIST'), checklistTable(f), gap(), commentsTable(f)
+  ].join('');
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"><w:body>${body}<w:sectPr><w:pgSz w:w="15840" w:h="12240" w:orient="landscape"/><w:pgMar w:top="576" w:right="576" w:bottom="576" w:left="576" w:header="360" w:footer="360" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+}
+const STYLES=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:eastAsia="Arial" w:cs="Arial"/><w:sz w:val="16"/><w:szCs w:val="16"/><w:lang w:val="en-US"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>`;
+const CT=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`;
+const RELS=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`;
+const docRels=()=>`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>${IMGS.map(([, ,rid,t])=>`<Relationship Id="${rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="${t}"/>`).join('')}</Relationships>`;
+
+/* minimal ZIP (store, no compression) */
+const CRC=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})();
+const crc32=b=>{let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=CRC[(c^b[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0;};
+function zip(files){
+  const enc=new TextEncoder(), parts=[], central=[]; let off=0;
+  const now=new Date(), dt=((now.getFullYear()-1980)<<9)|((now.getMonth()+1)<<5)|now.getDate(), tm=(now.getHours()<<11)|(now.getMinutes()<<5)|(now.getSeconds()>>1);
+  files.forEach(([name,str])=>{
+    const nb=enc.encode(name), data=(str instanceof Uint8Array)?str:enc.encode(str), crc=crc32(data);
+    const h=new DataView(new ArrayBuffer(30));
+    h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(8,0,true);h.setUint16(10,tm,true);h.setUint16(12,dt,true);
+    h.setUint32(14,crc,true);h.setUint32(18,data.length,true);h.setUint32(22,data.length,true);h.setUint16(26,nb.length,true);h.setUint16(28,0,true);
+    parts.push(new Uint8Array(h.buffer),nb,data);
+    const c=new DataView(new ArrayBuffer(46));
+    c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);c.setUint16(10,0,true);c.setUint16(12,tm,true);c.setUint16(14,dt,true);
+    c.setUint32(16,crc,true);c.setUint32(20,data.length,true);c.setUint32(24,data.length,true);c.setUint16(28,nb.length,true);c.setUint32(42,off,true);
+    central.push(new Uint8Array(c.buffer),nb);
+    off+=30+nb.length+data.length;
+  });
+  const csize=central.reduce((a,b)=>a+b.length,0), e=new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,csize,true);e.setUint32(16,off,true);
+  return new Blob([...parts,...central,new Uint8Array(e.buffer)],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+}
+
+window.buildDocx=function(data){
+  IMGS=[]; const doc=documentXml(data);
+  return zip([['[Content_Types].xml',CT],['_rels/.rels',RELS],['word/_rels/document.xml.rels',docRels()],['word/styles.xml',STYLES],['word/document.xml',doc],...IMGS.map(([p,b])=>[p,b])]);
+};
+document.getElementById('btnDocx').onclick=()=>{
+  const data=collect(), blob=buildDocx(data);
+  const date=data.fields.date||new Date().toISOString().slice(0,10), who=(data.fields.o1_serial||'').replace(/\W/g,'');
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`DFAR_${date}${who?'_'+who:''}.docx`;
+  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},800);
+  statusEl.textContent='Word file downloaded';
+};
+})();
+
+/* ---------- Officer signatures ---------- */
+(function(){
+const pad=document.getElementById('sigModal'), cv=document.getElementById('sigCanvas'), ctx=cv.getContext('2d');
+let target=null, drawing=false, dirty=false, last=null;
+function sizeCanvas(){
+  const r=cv.getBoundingClientRect(), dpr=window.devicePixelRatio||1;
+  cv.width=Math.round(r.width*dpr); cv.height=Math.round(r.height*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0); ctx.lineWidth=2.4; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle='#0b1f4a';
+  ctx.clearRect(0,0,r.width,r.height); dirty=false;
+}
+const pt=e=>{const r=cv.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top};};
+cv.addEventListener('pointerdown',e=>{e.preventDefault();cv.setPointerCapture(e.pointerId);drawing=true;last=pt(e);ctx.beginPath();ctx.arc(last.x,last.y,1.1,0,Math.PI*2);ctx.fillStyle=ctx.strokeStyle;ctx.fill();dirty=true;});
+cv.addEventListener('pointermove',e=>{if(!drawing)return;e.preventDefault();const p=pt(e);ctx.beginPath();ctx.moveTo(last.x,last.y);ctx.lineTo(p.x,p.y);ctx.stroke();last=p;dirty=true;});
+['pointerup','pointercancel','pointerleave'].forEach(t=>cv.addEventListener(t,()=>drawing=false));
+
+function trimmed(){ // crop to ink with a small margin, output at fixed aspect 3.2:1
+  const w=cv.width,h=cv.height,d=ctx.getImageData(0,0,w,h).data;let x0=w,y0=h,x1=0,y1=0;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(d[(y*w+x)*4+3]>10){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}
+  if(x1<x0) return null;
+  const m=Math.round(8*(window.devicePixelRatio||1));x0=Math.max(0,x0-m);y0=Math.max(0,y0-m);x1=Math.min(w,x1+m);y1=Math.min(h,y1+m);
+  let sw=x1-x0,sh=y1-y0; const A=3.2;
+  if(sw/sh<A){const nw=sh*A;x0-= (nw-sw)/2;sw=nw;} else {const nh=sw/A;y0-=(nh-sh)/2;sh=nh;}
+  const out=document.createElement('canvas');out.width=640;out.height=200;
+  out.getContext('2d').drawImage(cv,x0,y0,sw,sh,0,0,640,200);
+  return out.toDataURL('image/png');
+}
+window.openSig=function(i){
+  target=i; document.getElementById('sigWho').textContent=(form.querySelector(`[name="o${i}_name"]`).value||'OFFICER '+i).toUpperCase();
+  pad.classList.add('open'); requestAnimationFrame(sizeCanvas);
+};
+window.renderSigs=function(){
+  [1,2].forEach(i=>{
+    const v=form.querySelector(`[name="o${i}_sig"]`).value, box=document.getElementById('sigBox'+i);
+    box.innerHTML=v?`<img src="${v}" alt="Officer ${i} signature" class="sigimg"><button type="button" class="sigbtn clr" data-clear="${i}" title="Remove signature">✕</button>`
+                   :`<button type="button" class="sigbtn" data-sign="${i}">✍ Sign</button>`;
+  });
+};
+document.addEventListener('click',e=>{
+  const s=e.target.closest('[data-sign]'), c=e.target.closest('[data-clear]');
+  if(s) openSig(s.dataset.sign);
+  if(c){ form.querySelector(`[name="o${c.dataset.clear}_sig"]`).value=''; renderSigs(); save(); }
+});
+document.getElementById('sigClear').onclick=sizeCanvas;
+document.getElementById('sigCancel').onclick=()=>pad.classList.remove('open');
+document.getElementById('sigSave').onclick=()=>{
+  const url=dirty?trimmed():null;
+  if(!url){ document.getElementById('sigHint').textContent='Please sign in the box first.'; return; }
+  form.querySelector(`[name="o${target}_sig"]`).value=url; pad.classList.remove('open');
+  document.getElementById('sigHint').textContent='Sign with your finger, stylus or mouse.';
+  renderSigs(); save();
+};
+renderSigs();
+})();
+
+})();
+</script>
+</body>
+</html>
