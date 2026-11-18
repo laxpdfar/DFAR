@@ -39,13 +39,14 @@
   .mic:hover{background:var(--soft)}
   .mic.on{background:#c62828;color:#fff;animation:pulse 1.2s infinite}
   @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(198,40,40,.6)}70%{box-shadow:0 0 0 8px rgba(198,40,40,0)}100%{box-shadow:0 0 0 0 rgba(198,40,40,0)}}
-  .namewrap{display:flex;align-items:center;gap:4px}
+  .namewrap{display:flex;align-items:center;gap:2px}
+  .namewrap input[name$="_name"]{flex:1 1 auto;min-width:9ch}
   .sigbox{display:flex;align-items:center;flex:none}
   .sigbtn{border:1px solid var(--accent);background:#fff;color:var(--accent);border-radius:4px;font-size:11px;font-weight:bold;padding:3px 7px;cursor:pointer;white-space:nowrap;margin-right:4px}
   .sigbtn.clr{border:0;color:#b33;padding:2px 4px;font-size:13px}
-  .sigimg{height:34px;width:auto;display:block}
-  .sigpad{max-width:560px!important;width:94vw}
-  #sigCanvas{display:block;width:100%;height:180px;margin-top:10px;border:1px dashed #889;border-radius:4px;background:#fff linear-gradient(transparent 78%,#c9ced8 78%,#c9ced8 79%,transparent 79%);touch-action:none;cursor:crosshair}
+  .sigimg{height:24px;width:48px;display:block;margin-right:2px}
+  .sigpad{max-width:420px!important;width:94vw}
+  #sigCanvas{display:block;width:100%;height:200px;margin-top:10px;border:1px dashed #889;border-radius:4px;background:#fff linear-gradient(transparent 78%,#c9ced8 78%,#c9ced8 79%,transparent 79%);touch-action:none;cursor:crosshair}
   .modal button.go2{background:var(--accent);color:#fff;border-color:var(--accent)}
   .mailbox{width:min(460px,94vw);max-width:none!important}
   .mailbox .fl{display:block;font-size:11px;font-weight:bold;margin-top:10px}
@@ -141,7 +142,7 @@
   <h2>OFFICER / VEHICLE</h2>
   <div class="info-wrap">
   <table class="info">
-    <thead><tr><th style="width:26px"></th><th style="width:20%">OFFICER NAME</th><th>SERIAL #</th><th>BADGE #</th><th>RADIO #</th><th>ON DUTY</th><th>OFF DUTY</th><th colspan="2" style="width:22%"></th><th colspan="2" style="width:18%"></th></tr></thead>
+    <thead><tr><th style="width:26px"></th><th style="width:30%">OFFICER NAME</th><th style="width:7%">SERIAL #</th><th style="width:6%">BADGE #</th><th style="width:6%">RADIO #</th><th>ON DUTY</th><th>OFF DUTY</th><th colspan="2" style="width:22%"></th><th colspan="2" style="width:18%"></th></tr></thead>
     <tbody>
       <tr>
         <td class="rc">1</td>
@@ -194,7 +195,7 @@
 </form>
 <datalist id="supList"></datalist>
 
-<div class="modal" id="sigModal"><div class="box sigpad"><b>Signature — <span id="sigWho"></span></b><canvas id="sigCanvas" aria-label="Signature pad"></canvas><p class="note" id="sigHint" style="margin:4px 0 0">Sign with your finger, stylus or mouse.</p><div><button type="button" id="sigClear">Clear</button><button type="button" id="sigCancel">Cancel</button><button type="button" class="go2" id="sigSave">Save signature</button></div></div></div>
+<div class="modal" id="sigModal"><div class="box sigpad"><b>Initials — <span id="sigWho"></span></b><canvas id="sigCanvas" aria-label="Initials pad"></canvas><p class="note" id="sigHint" style="margin:4px 0 0">Write your initials with your finger, stylus or mouse.</p><div><button type="button" id="sigClear">Clear</button><button type="button" id="sigCancel">Cancel</button><button type="button" class="go2" id="sigSave">Save initials</button></div></div></div>
 <div class="modal" id="mailModal"><div class="box mailbox"><b>Email this report</b>
   <label class="fl">To <span style="font-weight:normal;color:#666">(optional, remembered on this device)</span><input id="mailTo" type="email" multiple placeholder="supervisor@example.org" autocomplete="email" style="text-transform:none"></label>
   <label class="fl">Subject<input id="mailSubj" style="text-transform:none"></label>
@@ -524,11 +525,11 @@ function statsTable(f){
 }
 
 function infoTable(f){
-  const g=[300,2600,1300,1100,1100,900,900], rest=W-g.reduce((a,b)=>a+b,0), q=Math.floor(rest/4), last=rest-q*3;
+  const g=[300,3600,900,800,800,900,900], rest=W-g.reduce((a,b)=>a+b,0), q=Math.floor(rest/4), last=rest-q*3;
   const grid=[...g,q,q,q,last];
   const H=['','OFFICER NAME','SERIAL #','BADGE #','RADIO #','ON DUTY','OFF DUTY'];
   const hdr=row([...H.map((h,i)=>cell(h,{w:g[i],b:true,sz:13,shade:GRAY,align:'center'})),cell('',{w:q,shade:GRAY}),cell('',{w:q,shade:GRAY}),cell('',{w:q,shade:GRAY}),cell('',{w:last,shade:GRAY})],{h:320});
-  const off=i=>[cell(String(i),{w:300,b:true,align:'center',shade:GRAY}),`<w:tc><w:tcPr><w:tcW w:w="2600" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr>${para(run(U(f[`o${i}_name`])))}${f[`o${i}_sig`]?para(sigRun(f[`o${i}_sig`],1.35,0.42)):''}</w:tc>`,cell(f[`o${i}_serial`],{w:1300,align:'center'}),cell(f[`o${i}_badge`],{w:1100,align:'center'}),cell(f[`o${i}_radio`],{w:1100,align:'center'}),cell(f[`o${i}_on`],{w:900,align:'center'}),cell(f[`o${i}_off`],{w:900,align:'center'})];
+  const off=i=>[cell(String(i),{w:300,b:true,align:'center',shade:GRAY}),`<w:tc><w:tcPr><w:tcW w:w="3600" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr>${para(run(U(f[`o${i}_name`]))+(f[`o${i}_sig`]?run('   ')+sigRun(f[`o${i}_sig`],0.44,0.22):''))}</w:tc>`,cell(f[`o${i}_serial`],{w:900,align:'center'}),cell(f[`o${i}_badge`],{w:800,align:'center'}),cell(f[`o${i}_radio`],{w:800,align:'center'}),cell(f[`o${i}_on`],{w:900,align:'center'}),cell(f[`o${i}_off`],{w:900,align:'center'})];
   const r1=row([...off(1),cell({lab:'WATCH',val:f.watch},{w:q}),cell({lab:'DAY',val:f.day},{w:q}),cell({lab:'VEHICLE SHOP #',val:f.vehicle},{w:q}),cell({lab:'MILEAGE EOW',val:f.mile_eow},{w:last})],{h:460});
   const r2=row([...off(2),cell({lab:'ASSIGNMENT',val:f.assignment},{w:q}),cell({lab:'DATE',val:fmtDate(f.date)},{w:q}),cell({lab:'CITE DATE',val:fmtDate(f.cite_date)},{w:q}),cell({lab:'MILEAGE OUT',val:f.mile_out},{w:last})],{h:460});
   const r3=row([cell('',{w:g.reduce((a,b)=>a+b,0),span:7,noBorder:true}),cell({lab:'SUPERVISOR APPROVING',val:f.supervisor},{w:q*3,span:3}),cell({lab:'TOTAL MILES',val:f.total_miles},{w:last})],{h:460});
@@ -635,10 +636,10 @@ function trimmed(){ // crop to ink with a small margin, output at fixed aspect 3
   for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(d[(y*w+x)*4+3]>10){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}
   if(x1<x0) return null;
   const m=Math.round(8*(window.devicePixelRatio||1));x0=Math.max(0,x0-m);y0=Math.max(0,y0-m);x1=Math.min(w,x1+m);y1=Math.min(h,y1+m);
-  let sw=x1-x0,sh=y1-y0; const A=3.2;
+  let sw=x1-x0,sh=y1-y0; const A=2;
   if(sw/sh<A){const nw=sh*A;x0-= (nw-sw)/2;sw=nw;} else {const nh=sw/A;y0-=(nh-sh)/2;sh=nh;}
-  const out=document.createElement('canvas');out.width=640;out.height=200;
-  out.getContext('2d').drawImage(cv,x0,y0,sw,sh,0,0,640,200);
+  const out=document.createElement('canvas');out.width=320;out.height=160;
+  out.getContext('2d').drawImage(cv,x0,y0,sw,sh,0,0,320,160);
   return out.toDataURL('image/png');
 }
 window.openSig=function(i){
@@ -648,8 +649,8 @@ window.openSig=function(i){
 window.renderSigs=function(){
   [1,2].forEach(i=>{
     const v=form.querySelector(`[name="o${i}_sig"]`).value, box=document.getElementById('sigBox'+i);
-    box.innerHTML=v?`<img src="${v}" alt="Officer ${i} signature" class="sigimg"><button type="button" class="sigbtn clr" data-clear="${i}" title="Remove signature">✕</button>`
-                   :`<button type="button" class="sigbtn" data-sign="${i}">✍ Sign</button>`;
+    box.innerHTML=v?`<img src="${v}" alt="Officer ${i} initials" class="sigimg"><button type="button" class="sigbtn clr" data-clear="${i}" title="Remove initials">✕</button>`
+                   :`<button type="button" class="sigbtn" data-sign="${i}">✍ Initial</button>`;
   });
 };
 document.addEventListener('click',e=>{
@@ -661,9 +662,9 @@ document.getElementById('sigClear').onclick=sizeCanvas;
 document.getElementById('sigCancel').onclick=()=>pad.classList.remove('open');
 document.getElementById('sigSave').onclick=()=>{
   const url=dirty?trimmed():null;
-  if(!url){ document.getElementById('sigHint').textContent='Please sign in the box first.'; return; }
+  if(!url){ document.getElementById('sigHint').textContent='Please write your initials in the box first.'; return; }
   form.querySelector(`[name="o${target}_sig"]`).value=url; pad.classList.remove('open');
-  document.getElementById('sigHint').textContent='Sign with your finger, stylus or mouse.';
+  document.getElementById('sigHint').textContent='Write your initials with your finger, stylus or mouse.';
   renderSigs(); save();
 };
 renderSigs();

@@ -10,13 +10,13 @@ A fillable version of the LAWA Airport Police Daily Field Activities Report that
 - Source dropdown matching the Activity Totals categories
 - Supervisor dropdown (W1–W3, alphabetical, selected watch first) in the Supervisor / Citation column
 - Dictation (mic) on disposition boxes and Comments, in browsers that support it (Chrome, Edge, Safari)
-- Officer signature pad (finger, stylus or mouse)
+- Officer initials pad (finger, stylus or mouse); initials appear after the officer name
 - Activity totals, officer/vehicle info, Total Miles = Mileage EOW − Mileage Out
 - Daily Patrol Checkout List
 
 ## Saving and printing
 - **Email:** on phones and tablets, opens the share menu with the Word file attached; elsewhere, saves the Word file and opens a pre-filled email to attach it to
-- **Download Word (.docx):** a printable, landscape Word document of both sheets, including signatures
+- **Download Word (.docx):** a printable, landscape Word document of both sheets, including initials
 - **Print / PDF:** prints both sheets in landscape
 - **Save file (.json) / Open file:** keep a report and reopen it later
 - Drafts autosave in the browser on that device only. Nothing is sent to a server.
