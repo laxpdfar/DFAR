@@ -5,7 +5,7 @@ A fillable version of the LAWA Airport Police Daily Field Activities Report that
 **Open the app:** enable GitHub Pages for this repo (Settings → Pages → Source: *Deploy from a branch* → `main` / root). The app will then be at `https://<owner>.github.io/<repo>/`.
 
 ## What it does
-- Activity log on two sheets (page 2 is the continuation sheet): 6 R/C time pairs on page 1, 5 on page 2
+- Activity log on two sheets (page 2 is the continuation sheet): 10 R/C time pairs (20 rows) on each page
 - Time fields are 24-hour dropdowns in 5-minute steps; the first R time follows the Watch (W1 0500, W2 1300, W3 2030)
 - Source dropdown matching the Activity Totals categories
 - Supervisor dropdown (W1–W3, alphabetical, selected watch first) in the Supervisor / Citation column
