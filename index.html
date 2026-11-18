@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-cache">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Daily Field Activities Report</title>
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
@@ -667,6 +668,28 @@ openBtn.onclick=()=>{
 document.getElementById('mailCancel').onclick=()=>m.classList.remove('open');
 })();
 
+/* ---------- Auto-update: reload when a newer version is on the site ---------- */
+(function(){
+  const APP_VERSION='2026-11-18.2';
+  if(location.protocol!=='https:') return;
+  let busy=false;
+  async function check(){
+    if(busy) return; busy=true;
+    try{
+      const r=await fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'});
+      const m=/APP_VERSION='([^']+)'/.exec(await r.text());
+      if(m && m[1]!==APP_VERSION){
+        const key='dfar_reloaded_for';
+        let done=null; try{done=sessionStorage.getItem(key);}catch(_){}
+        if(done!==m[1]){ try{sessionStorage.setItem(key,m[1]);}catch(_){} try{localStorage.setItem('dfar_form_v1',JSON.stringify(collect()));}catch(_){}
+          location.replace(location.pathname+'?v='+encodeURIComponent(m[1])); }
+      }
+    }catch(_){}
+    busy=false;
+  }
+  check();
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') check(); });
+})();
 })();
 </script>
 </body>
